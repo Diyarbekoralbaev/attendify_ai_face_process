@@ -61,8 +61,7 @@ class MainRunner:
         os.makedirs(test_camera_dir, exist_ok=True)
 
         # Start the periodic fetch_and_store_data in a separate thread
-        fetch_thread = threading.Thread(target=fetch_and_store_data, args=(self.db_manager, self.face_processor), daemon=True)
-        fetch_thread.start()
+        fetch_and_store_data(self.db_manager, self.face_processor)
 
         # Start the WebSocket listener in a separate thread
         ws_thread = threading.Thread(target=self.start_websocket_listener, daemon=True)

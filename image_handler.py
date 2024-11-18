@@ -1,6 +1,8 @@
 # image_handler.py
 
 import os
+import time
+
 import cv2
 import threading
 from watchdog.events import FileSystemEventHandler
@@ -117,16 +119,49 @@ class ImageHandler(FileSystemEventHandler):
         filename = os.path.basename(event.src_path)
         if filename.endswith('SNAP.jpg'):
             Config.logger.info(f"New image detected: {event.src_path}")
+            # Start a new thread to wait and process the image
             threading.Thread(
-                target=process_image,
-                args=(
-                    event.src_path,
+                target=self.wait_and_process_image,
+                args=(event.src_path,),
+                daemon=True
+            ).start()
+
+    def wait_and_process_image(self, file_path):
+        max_attempts = 10
+        wait_interval = 0.5  # seconds
+        attempts = 0
+
+        while attempts < max_attempts:
+            if self.is_file_fully_written(file_path):
+                Config.logger.info(f"File {file_path} is fully written. Proceeding to process.")
+                # Now process the image
+                process_image(
+                    file_path,
                     self.camera_id,
                     self.db_manager,
                     self.face_processor,
                     self.employee_last_report_times,
                     self.client_last_report_times,
                     self.lock
-                ),
-                daemon=True
-            ).start()
+                )
+                return
+            else:
+                attempts += 1
+                time.sleep(wait_interval)
+
+        Config.logger.error(f"File {file_path} is not fully written after {max_attempts * wait_interval} seconds.")
+        # Optionally, you can decide to process the file anyway or skip it
+
+    def is_file_fully_written(self, file_path):
+        try:
+            # Check if file size remains the same over an interval
+            initial_size = os.path.getsize(file_path)
+            time.sleep(0.5)
+            new_size = os.path.getsize(file_path)
+            if initial_size == new_size and initial_size > 0:
+                return True
+            else:
+                return False
+        except Exception as e:
+            Config.logger.error(f"Error checking if file is fully written: {e}")
+            return False
