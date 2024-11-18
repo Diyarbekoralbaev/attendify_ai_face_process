@@ -1,0 +1,9 @@
+opencv-python
+numpy
+python-dotenv
+insightface
+pymongo
+requests
+faiss-cpu
+watchdog
+websockets

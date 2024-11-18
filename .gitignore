@@ -1,0 +1,5 @@
+images/
+logs/
+logs/*
+.env
+.venv/
