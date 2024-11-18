@@ -112,6 +112,7 @@ class ImageHandler(FileSystemEventHandler):
         self.employee_last_report_times = employee_last_report_times
         self.client_last_report_times = client_last_report_times
         self.lock = lock
+        self.debounce_delay = 2  # Adjust as needed
 
     def on_created(self, event):
         if event.is_directory:
@@ -119,49 +120,50 @@ class ImageHandler(FileSystemEventHandler):
         filename = os.path.basename(event.src_path)
         if filename.endswith('SNAP.jpg'):
             Config.logger.info(f"New image detected: {event.src_path}")
-            # Start a new thread to wait and process the image
-            threading.Thread(
-                target=self.wait_and_process_image,
-                args=(event.src_path,),
-                daemon=True
-            ).start()
+            self.schedule_processing(event.src_path)
 
-    def wait_and_process_image(self, file_path):
-        max_attempts = 10
-        wait_interval = 0.5  # seconds
-        attempts = 0
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        filename = os.path.basename(event.src_path)
+        if filename.endswith('SNAP.jpg'):
+            Config.logger.debug(f"Image modified: {event.src_path}")
+            self.schedule_processing(event.src_path)
 
-        while attempts < max_attempts:
-            if self.is_file_fully_written(file_path):
-                Config.logger.info(f"File {file_path} is fully written. Proceeding to process.")
-                # Now process the image
-                process_image(
-                    file_path,
-                    self.camera_id,
-                    self.db_manager,
-                    self.face_processor,
-                    self.employee_last_report_times,
-                    self.client_last_report_times,
-                    self.lock
-                )
-                return
-            else:
-                attempts += 1
-                time.sleep(wait_interval)
+    def schedule_processing(self, file_path):
+        def delayed_process():
+            try:
+                # Wait for the debounce delay
+                time.sleep(self.debounce_delay)
+                # Check if the file has been modified recently
+                current_time = time.time()
+                last_modified = os.path.getmtime(file_path)
+                if current_time - last_modified >= self.debounce_delay:
+                    Config.logger.info(f"File {file_path} is ready for processing.")
+                    process_image(
+                        file_path,
+                        self.camera_id,
+                        self.db_manager,
+                        self.face_processor,
+                        self.employee_last_report_times,
+                        self.client_last_report_times,
+                        self.lock
+                    )
+                    self.pending_files.pop(file_path, None)
+                else:
+                    # Reschedule processing
+                    Config.logger.debug(f"Rescheduling processing for {file_path}")
+                    self.schedule_processing(file_path)
+            except Exception as e:
+                Config.logger.error(f"Error in delayed_process for {file_path}: {e}")
+                self.pending_files.pop(file_path, None)
 
-        Config.logger.error(f"File {file_path} is not fully written after {max_attempts * wait_interval} seconds.")
-        # Optionally, you can decide to process the file anyway or skip it
+        # Cancel any existing timer for the file
+        if file_path in self.pending_files:
+            timer = self.pending_files[file_path]
+            timer.cancel()
 
-    def is_file_fully_written(self, file_path):
-        try:
-            # Check if file size remains the same over an interval
-            initial_size = os.path.getsize(file_path)
-            time.sleep(2)
-            new_size = os.path.getsize(file_path)
-            if initial_size == new_size and initial_size > 0:
-                return True
-            else:
-                return False
-        except Exception as e:
-            Config.logger.error(f"Error checking if file is fully written: {e}")
-            return False
+        # Schedule new processing
+        timer = threading.Timer(self.debounce_delay, delayed_process)
+        self.pending_files[file_path] = timer
+        timer.start()
