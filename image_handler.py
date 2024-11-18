@@ -112,6 +112,7 @@ class ImageHandler(FileSystemEventHandler):
         self.employee_last_report_times = employee_last_report_times
         self.client_last_report_times = client_last_report_times
         self.lock = lock
+        self.pending_files = {}
         self.debounce_delay = 2  # Adjust as needed
 
     def on_created(self, event):
