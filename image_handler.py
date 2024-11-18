@@ -103,25 +103,30 @@ def process_image(file_path, camera_id, db_manager, face_processor, employee_las
 
 # Image Handler for Watchdog
 class ImageHandler(FileSystemEventHandler):
-    def __init__(self, db_manager, face_processor, logger, employee_last_report_times, client_last_report_times, lock):
-        super().__init__()
+    def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock):
+        self.camera_id = camera_id
         self.db_manager = db_manager
         self.face_processor = face_processor
-        self.logger = logger
         self.employee_last_report_times = employee_last_report_times
         self.client_last_report_times = client_last_report_times
         self.lock = lock
 
     def on_created(self, event):
-        if not event.is_directory and event.src_path.endswith('SNAP.jpg'):
-            self.logger.info(f"New image detected: {event.src_path}")
-            # Process the image synchronously
-            process_image(
-                event.src_path,
-                camera_id=1,
-                db_manager=self.db_manager,
-                face_processor=self.face_processor,
-                employee_last_report_times=self.employee_last_report_times,
-                client_last_report_times=self.client_last_report_times,
-                lock=self.lock
-            )
+        if event.is_directory:
+            return
+        filename = os.path.basename(event.src_path)
+        if filename.endswith('SNAP.jpg'):
+            Config.logger.info(f"New image detected: {event.src_path}")
+            threading.Thread(
+                target=process_image,
+                args=(
+                    event.src_path,
+                    self.camera_id,
+                    self.db_manager,
+                    self.face_processor,
+                    self.employee_last_report_times,
+                    self.client_last_report_times,
+                    self.lock
+                ),
+                daemon=True
+            ).start()
