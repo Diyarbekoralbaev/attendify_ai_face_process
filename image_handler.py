@@ -156,7 +156,7 @@ class ImageHandler(FileSystemEventHandler):
         try:
             # Check if file size remains the same over an interval
             initial_size = os.path.getsize(file_path)
-            time.sleep(0.5)
+            time.sleep(2)
             new_size = os.path.getsize(file_path)
             if initial_size == new_size and initial_size > 0:
                 return True
