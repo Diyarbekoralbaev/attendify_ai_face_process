@@ -6,40 +6,40 @@ import time
 from config import Config
 from database_manager import DatabaseManager
 from face_processor import FaceProcessor
-from image_handler import process_image
+from image_handler import process_image, ImageHandler
 from data_fetcher import fetch_and_store_data
 from websocket_listener import websocket_listener
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-class ImageHandler(FileSystemEventHandler):
-    def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock):
-        self.camera_id = camera_id
-        self.db_manager = db_manager
-        self.face_processor = face_processor
-        self.employee_last_report_times = employee_last_report_times
-        self.client_last_report_times = client_last_report_times
-        self.lock = lock
-
-    def on_created(self, event):
-        if event.is_directory:
-            return
-        filename = os.path.basename(event.src_path)
-        if filename.endswith('SNAP.jpg'):
-            Config.logger.info(f"New image detected: {event.src_path}")
-            threading.Thread(
-                target=process_image,
-                args=(
-                    event.src_path,
-                    self.camera_id,
-                    self.db_manager,
-                    self.face_processor,
-                    self.employee_last_report_times,
-                    self.client_last_report_times,
-                    self.lock
-                ),
-                daemon=True
-            ).start()
+# class ImageHandler(FileSystemEventHandler):
+#     def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock):
+#         self.camera_id = camera_id
+#         self.db_manager = db_manager
+#         self.face_processor = face_processor
+#         self.employee_last_report_times = employee_last_report_times
+#         self.client_last_report_times = client_last_report_times
+#         self.lock = lock
+#
+#     def on_created(self, event):
+#         if event.is_directory:
+#             return
+#         filename = os.path.basename(event.src_path)
+#         if filename.endswith('SNAP.jpg'):
+#             Config.logger.info(f"New image detected: {event.src_path}")
+#             threading.Thread(
+#                 target=process_image,
+#                 args=(
+#                     event.src_path,
+#                     self.camera_id,
+#                     self.db_manager,
+#                     self.face_processor,
+#                     self.employee_last_report_times,
+#                     self.client_last_report_times,
+#                     self.lock
+#                 ),
+#                 daemon=True
+#             ).start()
 
 class MainRunner:
     def __init__(self, images_folder):
