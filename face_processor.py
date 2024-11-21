@@ -13,7 +13,7 @@ class FaceProcessor:
         # Initialize FaceAnalysis with desired models
         self.provider = 'CPUExecutionProvider'
         logging.info(f"Using provider: {self.provider}")
-        self.app = FaceAnalysis(name='antelopev2', providers=[self.provider])
+        self.app = FaceAnalysis(name='buffalo_l', providers=[self.provider])
         self.app.prepare(ctx_id=0, det_size=Config.DET_SIZE)
 
     def get_embedding_from_image(self, image):
