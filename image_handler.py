@@ -20,9 +20,9 @@ def process_image(file_path, camera_id, db_manager, face_processor, employee_las
             return
 
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image_resized = cv2.resize(image_rgb, Config.DET_SIZE)
+        # image_resized = cv2.resize(image_rgb, Config.DET_SIZE)
 
-        embedding, age, gender = face_processor.get_embedding_from_image(image_resized)
+        embedding, age, gender = face_processor.get_embedding_from_image(image_rgb)
         if embedding is None:
             Config.logger.error(f"No face embedding found in image: {file_path}")
             return
