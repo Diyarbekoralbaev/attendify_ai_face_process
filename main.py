@@ -11,6 +11,7 @@ from data_fetcher import fetch_and_store_data
 from websocket_listener import websocket_listener
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from queue import Queue
 
 # class ImageHandler(FileSystemEventHandler):
 #     def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock):
@@ -54,6 +55,13 @@ class MainRunner:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        # Initialize a queue for image processing tasks
+        self.image_queue = Queue()
+
+        # Start the worker thread
+        self.worker_thread = threading.Thread(target=self.image_processing_worker, daemon=True)
+        self.worker_thread.start()
+
     def run(self):
         self.logger.info(f"Starting image processing for: {self.images_folder}")
 
@@ -68,15 +76,36 @@ class MainRunner:
         self.logger.info("Starting WebSocket listener.")
         ws_thread.start()
 
-        # Process existing images in the directory before starting the watchdog
+        # Process existing images in the directory by adding them to the queue
         self.process_images_in_directory(test_camera_dir)
 
         # Now start the watchdog to monitor new images
         self.start_watchdog(test_camera_dir)
 
-    def start_websocket_listener(self):
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(websocket_listener(self.db_manager, self.face_processor))
+    def image_processing_worker(self):
+        while True:
+            try:
+                # Get the next image path from the queue
+                file_path = self.image_queue.get()
+                if file_path is None:
+                    # Sentinel value to stop the worker
+                    break
+                self.logger.info(f"Worker processing image: {file_path}")
+                process_image(
+                    file_path,
+                    1,  # camera_id
+                    self.db_manager,
+                    self.face_processor,
+                    self.employee_last_report_times,
+                    self.client_last_report_times,
+                    self.lock
+                )
+                self.image_queue.task_done()
+            except Exception as e:
+                self.logger.error(f"Error in image_processing_worker: {e}")
+
+    def enqueue_image(self, file_path):
+        self.image_queue.put(file_path)
 
     def process_images_in_directory(self, directory):
         # List all files ending with 'SNAP.jpg' in the directory
@@ -84,21 +113,7 @@ class MainRunner:
             if filename.endswith('SNAP.jpg'):
                 file_path = os.path.join(directory, filename)
                 self.logger.info(f"Found image to process: {file_path}")
-
-                # Start a new thread to process the image
-                threading.Thread(
-                    target=process_image,
-                    args=(
-                        file_path,
-                        1,  # camera_id
-                        self.db_manager,
-                        self.face_processor,
-                        self.employee_last_report_times,
-                        self.client_last_report_times,
-                        self.lock
-                    ),
-                    daemon=True
-                ).start()
+                self.enqueue_image(file_path)
 
     def start_watchdog(self, directory):
         event_handler = ImageHandler(
@@ -107,7 +122,8 @@ class MainRunner:
             face_processor=self.face_processor,
             employee_last_report_times=self.employee_last_report_times,
             client_last_report_times=self.client_last_report_times,
-            lock=self.lock
+            lock=self.lock,
+            enqueue_image=self.enqueue_image  # Pass the enqueue function to the handler
         )
         observer = Observer()
         observer.schedule(event_handler, directory, recursive=False)
@@ -119,6 +135,11 @@ class MainRunner:
         except KeyboardInterrupt:
             observer.stop()
         observer.join()
+
+    def start_websocket_listener(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(websocket_listener(self.db_manager, self.face_processor))
+
 
 if __name__ == '__main__':
     images_folder = Config.IMAGES_FOLDER

@@ -105,13 +105,14 @@ def process_image(file_path, camera_id, db_manager, face_processor, employee_las
 
 # Image Handler for Watchdog
 class ImageHandler(FileSystemEventHandler):
-    def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock):
+    def __init__(self, camera_id, db_manager, face_processor, employee_last_report_times, client_last_report_times, lock, enqueue_image):
         self.camera_id = camera_id
         self.db_manager = db_manager
         self.face_processor = face_processor
         self.employee_last_report_times = employee_last_report_times
         self.client_last_report_times = client_last_report_times
         self.lock = lock
+        self.enqueue_image = enqueue_image
         self.pending_files = {}
         self.debounce_delay = 2  # Adjust as needed
 
@@ -141,15 +142,7 @@ class ImageHandler(FileSystemEventHandler):
                 last_modified = os.path.getmtime(file_path)
                 if current_time - last_modified >= self.debounce_delay:
                     Config.logger.info(f"File {file_path} is ready for processing.")
-                    process_image(
-                        file_path,
-                        self.camera_id,
-                        self.db_manager,
-                        self.face_processor,
-                        self.employee_last_report_times,
-                        self.client_last_report_times,
-                        self.lock
-                    )
+                    self.enqueue_image(file_path)
                     self.pending_files.pop(file_path, None)
                 else:
                     # Reschedule processing
