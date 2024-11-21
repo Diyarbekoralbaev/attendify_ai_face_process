@@ -14,7 +14,7 @@ class FaceProcessor:
         self.provider = 'CPUExecutionProvider'
         logging.info(f"Using provider: {self.provider}")
         self.app = FaceAnalysis(name='buffalo_l', providers=[self.provider])
-        self.app.prepare(ctx_id=0, det_size=Config.DET_SIZE)
+        self.app.prepare(ctx_id=0)
 
     def get_embedding_from_image(self, image):
         faces = self.app.get(image)
