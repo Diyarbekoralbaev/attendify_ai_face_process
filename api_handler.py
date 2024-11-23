@@ -26,13 +26,13 @@ def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
     except Exception as e:
         Config.logger.error(f"Error sending attendance to API: {e}")
 
-def update_client_via_api(client_id, datetime_str, device_id):
+def update_client_via_api(client_id: int, datetime_str: str, device_id: int):
     """Send client visit data to FastAPI API"""
     endpoint = f"/clients/visit-history/"
     data = {
         'datetime': datetime_str,
-        'device_id': device_id,
-        'client': client_id
+        'device_id': int(device_id),
+        'client': int(client_id)
     }
     try:
         headers = {'Authorization': f'Bearer {Config.API_TOKEN}'}
