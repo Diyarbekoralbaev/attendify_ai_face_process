@@ -1,8 +1,5 @@
 # funcs.py
 
-import logging
-import os
-import re
 import numpy as np
 from datetime import datetime
 import requests
@@ -32,7 +29,7 @@ def get_faces_data(faces, min_confidence=0.6):
 def get_embedding_from_url(image_url, face_processor):
     try:
         headers = {'Authorization': f'Bearer {Config.API_TOKEN}'}
-        response = requests.get(image_url, headers=headers)
+        response = requests.get(image_url, headers=headers, timeout=10)
         response.raise_for_status()
         image_array = np.frombuffer(response.content, np.uint8)
         image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
@@ -40,7 +37,6 @@ def get_embedding_from_url(image_url, face_processor):
             Config.logger.error(f"Failed to decode image from URL: {image_url}")
             return None
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # image_resized = cv2.resize(image_rgb, Config.DET_SIZE)
         embedding, age, gender = face_processor.get_embedding_from_image(image_rgb)
         if embedding is None:
             Config.logger.warning(f"No faces detected or pose exceeds threshold in image from URL: {image_url}")

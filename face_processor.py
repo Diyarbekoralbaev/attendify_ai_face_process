@@ -1,6 +1,5 @@
 # face_processor.py
 
-# import torch
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
@@ -28,15 +27,13 @@ class FaceProcessor:
                 Config.logger.warning(f"Face pose exceeds threshold: pose={face.pose}")
                 return None, None, None
 
-            embedding = face.embedding
+            embedding = face.embedding.astype('float32')
             # Normalize embedding
             norm = np.linalg.norm(embedding)
-            Config.logger.debug(f"Embedding norm: {norm}")
             if norm == 0:
                 Config.logger.warning("Detected face has zero norm embedding.")
                 return None, None, None
             embedding = embedding / norm
-            Config.logger.debug(f"Normalized embedding: {embedding}")
             age = getattr(face, 'age', None)
             gender = getattr(face, 'gender', None)
             return embedding, age, gender

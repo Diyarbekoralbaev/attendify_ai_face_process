@@ -7,7 +7,8 @@ from config import Config
 from funcs import get_embedding_from_url
 
 async def websocket_listener(db_manager, face_processor):
-    uri = f"{Config.API_BASE_URL.replace('http', 'ws')}/ws/"
+    uri = f"{Config.API_BASE_URL.replace('http', 'ws')}/ws"
+    print(uri)
 
     async with websockets.connect(uri) as websocket:
         Config.logger.info("Connected to WebSocket server.")
@@ -18,7 +19,7 @@ async def websocket_listener(db_manager, face_processor):
                 Config.logger.info(f"Received data via WebSocket: {data}")
 
                 # Handle the data (e.g., 'employee_update' or 'client_update')
-                if data['event'] == 'employee_update' or data['event'] == 'employee_create':
+                if data['event'] == 'employee_update':
                     await handle_employee_update(data['data'], db_manager, face_processor)
                 elif data['event'] == 'employee_delete':
                     await handle_employee_removed(data['data']['id'], db_manager)
@@ -40,6 +41,7 @@ async def handle_employee_update(employee_data, db_manager, face_processor):
     image_url = f"{Config.API_BASE_URL}/{employee_data['image']}"
     embedding = get_embedding_from_url(image_url, face_processor)
     if embedding is not None:
+        db_manager.remove_employee_embedding(person_id)
         db_manager.add_employee_embedding(person_id, embedding)
         Config.logger.info(f"Updated embedding for Employee ID: {person_id}")
     else:
@@ -50,6 +52,7 @@ async def handle_client_update(client_data, db_manager, face_processor):
     image_url = f"{Config.API_BASE_URL}/{client_data['image']}"
     embedding = get_embedding_from_url(image_url, face_processor)
     if embedding is not None:
+        db_manager.remove_client_embedding(person_id)
         db_manager.add_client_embedding(person_id, embedding)
         Config.logger.info(f"Updated embedding for Client ID: {person_id}")
     else:

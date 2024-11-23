@@ -2,7 +2,6 @@
 
 import os
 import time
-
 import cv2
 import threading
 from watchdog.events import FileSystemEventHandler
@@ -20,8 +19,6 @@ def process_image(file_path, camera_id, db_manager, face_processor, employee_las
             return
 
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # image_resized = cv2.resize(image_rgb, Config.DET_SIZE)
-
         embedding, age, gender = face_processor.get_embedding_from_image(image_rgb)
         if embedding is None:
             Config.logger.error(f"No face embedding found in image: {file_path}")
@@ -87,7 +84,7 @@ def process_image(file_path, camera_id, db_manager, face_processor, employee_las
         )
 
         if new_client_id:
-            # Store the embedding in MongoDB
+            # Store the embedding in Faiss index
             db_manager.add_client_embedding(new_client_id, embedding)
         else:
             Config.logger.error("Failed to create new client")

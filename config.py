@@ -11,21 +11,22 @@ def setup_logger(name, log_file, level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    # Create handlers
-    c_handler = logging.StreamHandler()
-    f_handler = logging.FileHandler(log_file)
-    c_handler.setLevel(logging.INFO)
-    f_handler.setLevel(logging.DEBUG)
+    if not logger.handlers:
+        # Create handlers
+        c_handler = logging.StreamHandler()
+        f_handler = logging.FileHandler(log_file)
+        c_handler.setLevel(logging.INFO)
+        f_handler.setLevel(logging.DEBUG)
 
-    # Create formatters and add them to handlers
-    c_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    f_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    c_handler.setFormatter(c_format)
-    f_handler.setFormatter(f_format)
+        # Create formatters and add them to handlers
+        c_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        f_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        c_handler.setFormatter(c_format)
+        f_handler.setFormatter(f_format)
 
-    # Add handlers to the logger
-    logger.addHandler(c_handler)
-    logger.addHandler(f_handler)
+        # Add handlers to the logger
+        logger.addHandler(c_handler)
+        logger.addHandler(f_handler)
 
     return logger
 
@@ -34,7 +35,9 @@ class Config:
     EMPLOYEE_SIMILARITY_THRESHOLD = float(os.getenv('EMPLOYEE_SIMILARITY_THRESHOLD', 0.65))  # Similarity threshold for employees
     MIN_DETECTION_CONFIDENCE = float(os.getenv('MIN_DETECTION_CONFIDENCE', 0.6))  # Minimum face detection confidence
     logger = setup_logger('MainRunner', 'logs/main.log')
-    DIMENSIONS = int(os.getenv('DIMENSIONS', 512))
+    INDEX_PATH_CLIENT = os.getenv('INDEX_PATH_CLIENT', 'client_index.index')
+    INDEX_PATH_EMPLOYEE = os.getenv('INDEX_PATH_EMPLOYEE', 'employee_index.index')
+    #DIMENSIONS = int(os.getenv('DIMENSIONS', 512))
     DET_SIZE = tuple(map(int, os.getenv('DET_SIZE', '640,640').split(',')))
     API_BASE_URL = os.getenv('API_BASE_URL', 'http://10.30.10.136:8000')
     API_TOKEN = os.getenv('API_TOKEN', 'your_api_token_here')  # Ensure this is set in your .env
