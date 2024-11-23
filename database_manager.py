@@ -9,8 +9,8 @@ from config import Config
 class DatabaseManager:
     def __init__(self):
         self.lock = threading.Lock()
-        self.index_path_employee = 'faiss_employee.index'
-        self.index_path_client = 'faiss_client.index'
+        self.index_path_employee = 'faiss_indexes/faiss_employee.index'
+        self.index_path_client = 'faiss_indexes/faiss_client.index'
 
         # Initialize or load Faiss indexes
         self.faiss_index_employee = self.initialize_index(self.index_path_employee)
