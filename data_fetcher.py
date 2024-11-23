@@ -10,15 +10,16 @@ def fetch_and_store_data(db_manager, face_processor):
     try:
         headers = {'Authorization': f'Bearer {Config.API_TOKEN}'}
         # Fetch Employees
-        employees_response = requests.get(f"{Config.API_BASE_URL}/employee/employees", headers=headers)
+        employees_response = requests.get(f"{Config.API_BASE_URL}/employees")
         employees_response.raise_for_status()
         employees = employees_response.json()
+        employees = employees['data']
 
         fetched_employee_ids = [emp['id'] for emp in employees]
 
         # Process and store employee embeddings
         for employee in employees:
-            image_url = f"{Config.API_BASE_URL}/{employee['image']}"
+            image_url = f"{Config.API_BASE_URL}{employee['image']}"
             embedding = get_embedding_from_url(image_url, face_processor)
             if embedding is not None:
                 db_manager.add_employee_embedding(employee['id'], embedding)
@@ -29,15 +30,16 @@ def fetch_and_store_data(db_manager, face_processor):
         db_manager.remove_deleted_employees(fetched_employee_ids)
 
         # Fetch Clients
-        clients_response = requests.get(f"{Config.API_BASE_URL}/client/clients", headers=headers)
+        clients_response = requests.get(f"{Config.API_BASE_URL}/clients")
         clients_response.raise_for_status()
         clients = clients_response.json()
+        clients = clients['data']
 
         fetched_client_ids = [cli['id'] for cli in clients]
 
         # Process and store client embeddings
         for client in clients:
-            image_url = f"{Config.API_BASE_URL}/{client['image']}"
+            image_url = f"{Config.API_BASE_URL}{client['image']}"
             embedding = get_embedding_from_url(image_url, face_processor)
             if embedding is not None:
                 db_manager.add_client_embedding(client['id'], embedding)

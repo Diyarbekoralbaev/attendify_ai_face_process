@@ -9,9 +9,9 @@ def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
     """Send attendance data to FastAPI API"""
     endpoint = "/attendance/create"  # Adjust as per actual API endpoint
     data = {
-        'employee_id': person_id,
+        'employee': person_id,
         'device_id': device_id,
-        'timestamp': timestamp,
+        'datetime': timestamp,
         'score': score
     }
     try:
@@ -28,10 +28,11 @@ def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
 
 def update_client_via_api(client_id, datetime_str, device_id):
     """Send client visit data to FastAPI API"""
-    endpoint = f"/client/visit-history/{client_id}"
+    endpoint = f"/clients/visit-history/"
     data = {
         'datetime': datetime_str,
-        'device_id': device_id
+        'device_id': device_id,
+        'client': client_id
     }
     try:
         headers = {'Authorization': f'Bearer {Config.API_TOKEN}'}
@@ -43,15 +44,17 @@ def update_client_via_api(client_id, datetime_str, device_id):
 
 def create_client_via_api(image_path, first_seen, last_seen, gender, age):
     """Create a new client via FastAPI API and return the new client ID"""
-    endpoint = "/client/create"
+    gender_named = "unknown"
+    if gender == 0:
+        gender_named = "female"
+    elif gender == 1:
+        gender_named = "male"
+
+    endpoint = "/clients"
     data = {
         'first_seen': first_seen,
-        'last_seen': last_seen
-    }
-    # Query Parameters
-    params = {
-        'visit_count': 1,
-        'gender': gender,
+        'last_seen': last_seen,
+        'gender': gender_named,
         'age': age
     }
     try:
@@ -60,7 +63,7 @@ def create_client_via_api(image_path, first_seen, last_seen, gender, age):
             files = {
                 'image': (os.path.basename(image_path), img_file, 'image/jpeg')
             }
-            response = send_report_with_response(endpoint, data=data, files=files, params=params, headers=headers)
+            response = send_report_with_response(endpoint, data=data, files=files, headers=headers)
             if response and response.status_code == 200:
                 client_data = response.json()
                 new_client_id = client_data.get('data', {}).get('id')
@@ -92,7 +95,7 @@ def send_report_json(endpoint, data=None, headers=None):
     """Send JSON report to FastAPI API"""
     url = f"{Config.API_BASE_URL}{endpoint}"
     try:
-        response = requests.post(url, json=data, headers=headers)
+        response = requests.post(url, json=data)
         response.raise_for_status()
         Config.logger.info(f"Successfully sent JSON report to {endpoint}")
         return response
