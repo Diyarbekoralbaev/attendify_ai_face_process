@@ -7,7 +7,7 @@ from config import Config
 from funcs import get_embedding_from_url
 
 async def websocket_listener(db_manager, face_processor):
-    uri = f"{Config.API_BASE_URL.replace('http', 'ws')}/ws"
+    uri = f"{Config.API_BASE_URL.replace('http', 'ws')}/ws/"
     print(uri)
 
     async with websockets.connect(uri) as websocket:
@@ -19,7 +19,7 @@ async def websocket_listener(db_manager, face_processor):
                 Config.logger.info(f"Received data via WebSocket: {data}")
 
                 # Handle the data (e.g., 'employee_update' or 'client_update')
-                if data['event'] == 'employee_update':
+                if data['event'] == 'employee_update' or data['event'] == 'employee_create':
                     await handle_employee_update(data['data'], db_manager, face_processor)
                 elif data['event'] == 'employee_delete':
                     await handle_employee_removed(data['data']['id'], db_manager)
