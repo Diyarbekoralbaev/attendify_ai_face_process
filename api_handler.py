@@ -28,7 +28,7 @@ def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
 
 def update_client_via_api(client_id, datetime_str, device_id):
     """Send client visit data to FastAPI API"""
-    endpoint = f"/client/visit-history/"
+    endpoint = f"/clients/visit-history/"
     data = {
         'datetime': datetime_str,
         'device_id': device_id,
