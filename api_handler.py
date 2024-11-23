@@ -63,7 +63,7 @@ def create_client_via_api(image_path, first_seen, last_seen, gender, age):
                 'image': (os.path.basename(image_path), img_file, 'image/jpeg')
             }
             response = send_report_with_response(endpoint, data=data, files=files)
-            if response and response.status_code == 200:
+            if response and response.status_code == 201:
                 client_data = response.json()
                 new_client_id = client_data.get('data', {}).get('id')
                 if new_client_id:
