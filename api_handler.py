@@ -20,7 +20,7 @@ def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
             files = {
                 'image': (os.path.basename(image_path), img_file, 'image/jpeg')
             }
-            response = send_report(endpoint, data=data, files=files, headers=headers)
+            response = send_report(endpoint, data=data, files=files)
             if response:
                 Config.logger.info(f"Attendance sent for employee {person_id} with similarity {score}")
     except Exception as e:
@@ -36,7 +36,7 @@ def update_client_via_api(client_id, datetime_str, device_id):
     }
     try:
         headers = {'Authorization': f'Bearer {Config.API_TOKEN}'}
-        response = send_report_json(endpoint, data=data, headers=headers)
+        response = send_report_json(endpoint, data=data)
         if response:
             Config.logger.info(f"Client {client_id} visit updated.")
     except Exception as e:
@@ -62,7 +62,7 @@ def create_client_via_api(image_path, first_seen, last_seen, gender, age):
             files = {
                 'image': (os.path.basename(image_path), img_file, 'image/jpeg')
             }
-            response = send_report_with_response(endpoint, data=data, files=files, headers=headers)
+            response = send_report_with_response(endpoint, data=data, files=files)
             if response and response.status_code == 200:
                 client_data = response.json()
                 new_client_id = client_data.get('data', {}).get('id')
