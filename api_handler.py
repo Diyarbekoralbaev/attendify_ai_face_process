@@ -7,7 +7,7 @@ from funcs import get_embedding_from_url
 
 def save_attendance_to_api(person_id, device_id, image_path, timestamp, score):
     """Send attendance data to FastAPI API"""
-    endpoint = "/employees/attendance"
+    endpoint = "/employees/attendance/"
     data = {
         'employee': person_id,
         'device_id': device_id,
@@ -49,7 +49,7 @@ def create_client_via_api(image_path, first_seen, last_seen, gender, age):
         gender_named = "female"
     elif gender == 1:
         gender_named = "male"
-    endpoint = "/clients"
+    endpoint = "/clients/"
     data = {
         'first_seen': first_seen,
         'last_seen': last_seen,
